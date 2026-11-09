@@ -4,8 +4,7 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/jonathantrevino/resumes-cli/internal/vault"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +25,10 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	// Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Printf("adding %s for %s at %s\n", args[0], role, company)
+		role, _ := vault.Slug(role)
+		company, _ := vault.Slug(company)
+
+		// TODO: Create and call file storing function
 		return nil
 	},
 }
