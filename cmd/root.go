@@ -12,7 +12,7 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "resumes",
-	Short: "Keep track of your resumes as you job hunt.",
+	Short: "Version control for your resumes, from the command line",
 	Long: `
 Automatically sort existing resumes and generate new
 ones for every company you apply to.`,
