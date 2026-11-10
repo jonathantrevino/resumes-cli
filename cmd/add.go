@@ -4,6 +4,8 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/jonathantrevino/resumes-cli/internal/vault"
 	"github.com/spf13/cobra"
 )
@@ -28,7 +30,13 @@ to quickly create a Cobra application.`,
 		role, _ := vault.Slug(role)
 		company, _ := vault.Slug(company)
 
-		// TODO: Create and call file storing function
+		// add file to requested company and role location in vault folder
+		_, err := vault.Add(args[0], role, company)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
 		return nil
 	},
 }
