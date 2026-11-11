@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +12,14 @@ import (
 	"time"
 	"unicode"
 )
+
+type Resume struct {
+	Company          string    `json:"company"`
+	Role             string    `json:"role"`
+	OriginalFileName string    `json:"orginal_name"`
+	FiledFileName    string    `json:"slug_name"`
+	AddedAt          time.Time `json:"added_at"`
+}
 
 // home returns vault folder: $RESUMES_HOME if set, ~/resumes if empty
 func home() (string, error) {
@@ -32,12 +41,12 @@ func home() (string, error) {
 }
 
 // Add returns string location file was added to, empty string if error
-func Add(src, company, role string) (string, error) {
+func Add(src, company, role string) (*Resume, error) {
 
 	// get users vault location
 	root, err := home()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// build the full directory path where file will be placed
@@ -45,26 +54,27 @@ func Add(src, company, role string) (string, error) {
 
 	// create location file will be stored
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", fmt.Errorf("error creating %s, %w", dir, err)
+		return nil, fmt.Errorf("error creating %s, %w", dir, err)
 	}
 
 	// append date to file name
 	name := time.Now().Format("01-02-2006") + "-" + filepath.Base(src)
 
 	// store file in location
-	dest, err := copyNew(src, filepath.Join(dir, name)) // add appended name to destination
+	resume, err := copyNew(src, filepath.Join(dir, name), company, role) // add appended name to destination
 
 	// return written destination back to caller
-	return dest, nil
+	return resume, nil
 }
 
 // copyNew returns destination copy was written to empty string if error
-func copyNew(src, dst string) (string, error) {
+func copyNew(src, dst, company, role string) (*Resume, error) {
 
+	fmt.Println("destination in copyNew: ", dst)
 	// open source file to be copied
 	in, err := os.Open(src)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// always close source file on function finish
@@ -90,7 +100,7 @@ func copyNew(src, dst string) (string, error) {
 
 		// return error to caller if OpenFile fails
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
 		// destination file is opened and file does not already exist
@@ -102,13 +112,52 @@ func copyNew(src, dst string) (string, error) {
 			// return error to caller since copy failed
 			out.Close()
 			os.Remove(dst)
-			return "", fmt.Errorf("copying %s: %w", src, err)
+			return nil, fmt.Errorf("copying %s: %w", src, err)
 		}
+
+		resume, err := createJson(src, dst, company, role)
+		if err != nil {
+			// TOOD: delete copied file if json file not created
+			return nil, fmt.Errorf("creating json %w", err)
+		}
+		fmt.Println(resume)
 
 		// copy successful return destination copy was written to
 		// Close() returns an error send it back to caller
-		return dst, out.Close()
+		return resume, out.Close()
 	}
+}
+
+func deleteNew(dst string) (bool, error) {
+	return true, nil
+}
+
+// createJson returns resume struct to caller error if false
+func createJson(original_name, filed_name, company, role string) (*Resume, error) {
+
+	// create struct object
+	resume := Resume{Company: company, Role: role, OriginalFileName: original_name, FiledFileName: filed_name, AddedAt: time.Now()}
+
+	fmt.Println("resume in createJson: ", resume)
+
+	marshalled, err := json.Marshal(resume)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal object %w", err)
+	}
+
+	json_filed_name := filed_name + ".json"
+
+	// TODO: use OpenFile() instead to handle existing json files
+	jsonFile, err := os.OpenFile(json_filed_name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open json file %w", err)
+	}
+
+	defer jsonFile.Close()
+
+	jsonFile.Write(marshalled)
+
+	return &resume, nil
 }
 
 // Slug returns formatted string, empty if error
