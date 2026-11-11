@@ -31,11 +31,13 @@ to quickly create a Cobra application.`,
 		company, _ := vault.Slug(company)
 
 		// add file to requested company and role location in vault folder
-		_, err := vault.Add(args[0], role, company)
+		resume, err := vault.Add(args[0], company, role)
 		if err != nil {
 			fmt.Println(err)
 			return err
 		}
+
+		fmt.Printf("resume json: %v\n", resume)
 
 		return nil
 	},
