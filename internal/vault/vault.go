@@ -17,7 +17,7 @@ type Resume struct {
 	Company          string    `json:"company"`
 	Role             string    `json:"role"`
 	OriginalFileName string    `json:"orginal_name"`
-	FiledFileName    string    `json:"slug_name"`
+	FiledFileName    string    `json:"filed_name"`
 	AddedAt          time.Time `json:"added_at"`
 }
 
@@ -115,7 +115,7 @@ func copyNew(src, dst, company, role string) (*Resume, error) {
 			return nil, fmt.Errorf("copying %s: %w", src, err)
 		}
 
-		resume, err := createJson(src, dst, company, role)
+		resume, err := createJSON(src, dst, company, role)
 		if err != nil {
 			// TOOD: delete copied file if json file not created
 			return nil, fmt.Errorf("creating json %w", err)
@@ -128,34 +128,32 @@ func copyNew(src, dst, company, role string) (*Resume, error) {
 	}
 }
 
+// TODO: deleteNew should return true when copyNew copy is deleted false if error
 func deleteNew(dst string) (bool, error) {
 	return true, nil
 }
 
 // createJson returns resume struct to caller error if false
-func createJson(original_name, filed_name, company, role string) (*Resume, error) {
+func createJSON(original_name, filed_name, company, role string) (*Resume, error) {
 
 	// create struct object
 	resume := Resume{Company: company, Role: role, OriginalFileName: original_name, FiledFileName: filed_name, AddedAt: time.Now()}
 
-	fmt.Println("resume in createJson: ", resume)
-
-	marshalled, err := json.Marshal(resume)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal object %w", err)
-	}
-
 	json_filed_name := filed_name + ".json"
 
-	// TODO: use OpenFile() instead to handle existing json files
+	// OpenFile() opens new file for .json
+	// WriteFile() can also be used to handle creating the file and write to file
 	jsonFile, err := os.OpenFile(json_filed_name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open json file %w", err)
 	}
 
-	defer jsonFile.Close()
+	// create and use encoder to write json to file, SetIndent() formats / indents json in file
+	enc := json.NewEncoder(jsonFile)
+	enc.SetIndent("", "  ")
+	enc.Encode(resume)
 
-	jsonFile.Write(marshalled)
+	defer jsonFile.Close()
 
 	return &resume, nil
 }
