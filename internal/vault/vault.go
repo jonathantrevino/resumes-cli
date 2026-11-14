@@ -70,7 +70,6 @@ func Add(src, company, role string) (*Resume, error) {
 // copyNew returns destination copy was written to empty string if error
 func copyNew(src, dst, company, role string) (*Resume, error) {
 
-	fmt.Println("destination in copyNew: ", dst)
 	// open source file to be copied
 	in, err := os.Open(src)
 	if err != nil {
@@ -117,10 +116,9 @@ func copyNew(src, dst, company, role string) (*Resume, error) {
 
 		resume, err := createJSON(src, dst, company, role)
 		if err != nil {
-			// TOOD: delete copied file if json file not created
+			deleteNew(dst)
 			return nil, fmt.Errorf("creating json %w", err)
 		}
-		fmt.Println(resume)
 
 		// copy successful return destination copy was written to
 		// Close() returns an error send it back to caller
@@ -128,12 +126,16 @@ func copyNew(src, dst, company, role string) (*Resume, error) {
 	}
 }
 
-// TODO: deleteNew should return true when copyNew copy is deleted false if error
+// TODO: deleteNew should return true when copyNew copy is deleted, false if error
 func deleteNew(dst string) (bool, error) {
+	err := os.Remove(dst)
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
-// createJson returns resume struct to caller error if false
+// createJson returns resume struct to caller, error if false
 func createJSON(original_name, filed_name, company, role string) (*Resume, error) {
 
 	// create struct object
