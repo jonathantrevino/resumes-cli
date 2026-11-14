@@ -29,9 +29,11 @@ to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		role, _ := vault.Slug(role)
 		company, _ := vault.Slug(company)
+		fileName := args[0]
 
 		// add file to requested company and role location in vault folder
-		resume, err := vault.Add(args[0], company, role)
+		resume, err := vault.Add(fileName, company, role)
+		fmt.Println(err)
 		if err != nil {
 			fmt.Println(err)
 			return err
